@@ -1,0 +1,233 @@
+#include <iostream>
+#include <fstream>
+#include <cstring>
+#include <locale.h>
+#include <conio.h>
+
+using namespace std;
+
+
+struct BeyazEsya {
+    char ad[80];
+    char marka[80];
+    int stok;
+
+    void BilgileriGir() {
+        cout << "Beyaz Eşya Adı: ";
+        cin.ignore();
+        cin.getline(ad, sizeof(ad));
+
+        cout << "Marka: ";
+        cin.getline(marka, sizeof(marka));
+
+        cout << "Stok Adedi: ";
+        cin >> stok;
+    }
+
+    void BilgileriGoster() const {
+        cout << "Beyaz Eşya Adı: " << ad << endl;
+        cout << "Marka: " << marka << endl;
+        cout << "Stok Adedi: " << stok << endl;
+    }
+};
+
+void BeyazEsyaEkle();
+void BeyazEsyaListele();
+void BeyazEsyaArama();
+void BeyazEsyaSil();
+void BeyazEsyaDuzenle();
+
+int main() {
+    
+	setlocale(LC_ALL, "Turkish");
+
+	
+	char secim;
+    do {
+        system("cls");
+
+        cout << "|------- Beyaz Eşya Otomasyonu ------|" << endl;
+        cout << "| 1- Beyaz Eşya Ekleme               |" << endl;
+        cout << "| 2- Beyaz Eşya Listeleme            |" << endl;
+        cout << "| 3- Beyaz Eşya Arama                |" << endl;
+        cout << "| 4- Beyaz Eşya Silme                |" << endl;
+        cout << "| 5- Beyaz Eşya Düzenleme            |" << endl;
+        cout << "|------------------------------------|" << endl;
+
+        cin >> secim;
+
+        switch (secim) {
+            case '1':
+                BeyazEsyaEkle();
+                break;
+            case '2':
+                BeyazEsyaListele();
+                break;
+            case '3':
+                BeyazEsyaArama();
+                break;
+            case '4':
+                BeyazEsyaSil();
+                break;
+            case '5':
+                BeyazEsyaDuzenle();
+                break;
+        }
+
+        cout << "Ana Menüye Dönmek İçin 'a' Tuşuna Basınız, Çıkmak İçin 'c' Tuşuna Basınız: ";
+        secim = getche();
+        cout << endl;
+
+    } while (secim == 'a' || secim == 'A');
+
+    return 0;
+}
+
+void BeyazEsyaEkle() {
+    ofstream dosya("beyazesya.dat", ios::binary | ios::app);
+    BeyazEsya esya;
+
+    esya.BilgileriGir();
+    dosya.write((char*)&esya, sizeof(BeyazEsya));
+
+    cout << "Beyaz Eşya Başarıyla Eklendi." << endl;
+
+    dosya.close();
+}
+
+void BeyazEsyaListele() {
+    ifstream dosya("beyazesya.dat", ios::binary);
+
+    if (!dosya) {
+        cout << "Dosya Bulunamadı." << endl;
+        return;
+    }
+
+    BeyazEsya esya;
+    dosya.seekg(0, std::ios::end);
+    int kayitSayisi = dosya.tellg() / sizeof(BeyazEsya);
+
+    cout << "Toplam Beyaz Eşya Sayısı: " << kayitSayisi << endl;
+
+    dosya.seekg(0, ios::beg);
+    while (dosya.read((char*)&esya, sizeof(BeyazEsya))) {
+        esya.BilgileriGoster();
+        cout << "---------------------" << endl;
+    }
+
+    dosya.close();
+}
+
+void BeyazEsyaArama() {
+    ifstream dosya("beyazesya.dat", ios::binary);
+
+    if (!dosya) {
+        cout << "Dosya Bulunamadı." << endl;
+        return;
+    }
+
+    BeyazEsya esya;
+    char arananAd[80];
+    bool bulundu = false;
+
+    cout << "Aranan Beyaz Eşya Adını Giriniz: ";
+    cin.ignore();
+    cin.getline(arananAd, sizeof(arananAd));
+
+    dosya.seekg(0, ios::beg);
+    while (dosya.read((char*)&esya, sizeof(BeyazEsya))) {
+        if (strcmp(esya.ad, arananAd) == 0) {
+            esya.BilgileriGoster();
+            bulundu = true;
+            break;
+        }
+    }
+
+    if (!bulundu) {
+        cout << "Aranan Beyaz Eşya Bulunamadı." << endl;
+    }
+
+    dosya.close();
+}
+
+void BeyazEsyaSil() {
+    ifstream oku("beyazesya.dat", ios::binary);
+
+    if (!oku) {
+        cout << "Dosya Bulunamadı." << endl;
+        return;
+    }
+
+    ofstream yaz("temp.dat", ios::binary);
+
+    BeyazEsya esya;
+    char silinecekAd[80];
+    bool silindi = false;
+
+    cout << "Silinecek Beyaz Eşya Adını Giriniz: ";
+    cin.ignore();
+    cin.getline(silinecekAd, sizeof(silinecekAd));
+
+    oku.seekg(0, ios::beg);
+    while (oku.read((char*)&esya, sizeof(BeyazEsya))) {
+        if (strcmp(esya.ad, silinecekAd) == 0) {
+            esya.BilgileriGoster();
+            silindi = true;
+        } else {
+            yaz.write((char*)&esya, sizeof(BeyazEsya));
+        }
+    }
+
+    oku.close();
+    yaz.close();
+
+    remove("beyazesya.dat");
+    rename("temp.dat", "beyazesya.dat");
+
+    if (silindi) {
+        cout << "Beyaz Eşya Başarıyla Silindi." << endl;
+    } else {
+        cout << "Silinecek Beyaz Eşya Bulunamadı." << endl;
+    }
+}
+
+void BeyazEsyaDuzenle() {
+    ifstream oku("beyazesya.dat", ios::binary);
+
+    if (!oku) {
+        cout << "Dosya Bulunamadı." << endl;
+        return;
+    }
+
+    ofstream yaz("temp.dat", ios::binary);
+
+    BeyazEsya esya;
+    char duzenlenecekAd[80];
+    bool duzenlendi = false;
+
+    cout << "Düzenlenecek Beyaz Eşya Adını Giriniz: ";
+    cin.ignore();
+    cin.getline(duzenlenecekAd, sizeof(duzenlenecekAd));
+
+    oku.seekg(0, ios::beg);
+    while (oku.read((char*)&esya, sizeof(BeyazEsya))) {
+        if (strcmp(esya.ad, duzenlenecekAd) == 0) {
+            esya.BilgileriGoster();
+            esya.BilgileriGir();
+            duzenlendi = true;
+        }
+        yaz.write((char*)&esya, sizeof(BeyazEsya));
+    }
+
+    oku.close();
+    yaz.close();
+
+    remove("beyazesya.dat");
+    rename("temp.dat", "beyazesya.dat");
+
+    if (duzenlendi) {
+        cout << "Beyaz Eşya Başarıyla Düzenlendi." << endl;
+    } else {
+        cout << "Düzenlenecek Beyaz Eşya Bulunamadı." << endl;
+    }
+}
